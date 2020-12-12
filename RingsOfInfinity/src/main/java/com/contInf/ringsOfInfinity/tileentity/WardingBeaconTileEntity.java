@@ -112,74 +112,29 @@ public class WardingBeaconTileEntity extends TileEntity
 		if(isLit()) {
 			this.currentBurnTime--;
 		}
-		
+
+    if(this.world != null && this.world.isRemote) {  // segments are only used for rendering -? so only create on the client.
+      clientCreateBeamSegments();
+    }
+
 		if(this.world != null && !this.world.isRemote) {
-			
 			ItemStack fuelSlot = this.inventory.getStackInSlot(0);
 			
 			if(isLit() || !fuelSlot.isEmpty()) {
-				
+
 				if(!isLit()) {
-					
+
 					this.currentBurnTime = getBurnTime(fuelSlot);
 					itemBurnTime = this.currentBurnTime;
-					
+
 					if(this.isLit()) {
-						
+
 						startedBurning = true;
 						this.inventory.decrStackSize(0,1);
-						
+
 					}
 				}
-				
-				if(isLit()) {
-					ticksSinceLastBeamCheck++;
-					if(ticksSinceLastBeamCheck == 10) {
-						
-						int beaconXCoord = this.pos.getX();
-						int beaconYCoord = this.pos.getY();
-						int beaconZCoord = this.pos.getZ();
-						
-						newBeamSegments = Lists.newArrayList();
-						
-						this.lastBlockChecked = new BlockPos(beaconXCoord,beaconYCoord + 1,beaconZCoord);
-						
-						BeamSegment newBeamSegment = null;
-						
-						for(int i = lastBlockChecked.getY(); i < this.world.getActualHeight(); i ++) {
-							
-							//BlockState currentBlockState = this.world.getBlockState(lastBlockChecked);
-							//Block currentBlock = currentBlockState.getBlock();
-							//logger.debug("Current Block Height: " + lastBlockChecked.getY());
-							
-							float[] blockBeamColorMultipliers = new float[] {0.0f};
-									//urrentBlockState.getBeaconColorMultiplier(world, lastBlockChecked, getPos());
-							
-							//logger.debug("color multipliers: " + Arrays.toString(blockBeamColorMultipliers));
-							
-							if(blockBeamColorMultipliers!= null) {
-								
-								newBeamSegment = new BeamSegment(blockBeamColorMultipliers,lastBlockChecked.getY());
-								newBeamSegments.add(newBeamSegment);
-								
-							}/*else {
-								
-								if(newBeamSegment == null || currentBlockState.getOpacity(this.world, lastBlockChecked) >= 15
-										&& currentBlock != Blocks.BEDROCK) {
-									this.newBeamSegments.clear();
-									break;
-								}
-								
-							}
-							*/
-							lastBlockChecked = lastBlockChecked.up();
-						}
-						
-						oldBeamSegments = newBeamSegments;
-						
-						ticksSinceLastBeamCheck = 0;
-					}
-				}
+
 			}
 			if(currentState != this.isLit()) {
 				
@@ -207,7 +162,59 @@ public class WardingBeaconTileEntity extends TileEntity
 	public List<BeamSegment> getBeamSegments(){
 		return oldBeamSegments;
 	}
-	
+
+	private void clientCreateBeamSegments() {
+    if(isLit()) {
+      ticksSinceLastBeamCheck++;
+      if(ticksSinceLastBeamCheck == 10) {
+
+        int beaconXCoord = this.pos.getX();
+        int beaconYCoord = this.pos.getY();
+        int beaconZCoord = this.pos.getZ();
+
+        newBeamSegments = Lists.newArrayList();
+
+        this.lastBlockChecked = new BlockPos(beaconXCoord,beaconYCoord + 1,beaconZCoord);
+
+        BeamSegment newBeamSegment = null;
+
+        for(int i = lastBlockChecked.getY(); i < this.world.getActualHeight(); i ++) {
+
+          //BlockState currentBlockState = this.world.getBlockState(lastBlockChecked);
+          //Block currentBlock = currentBlockState.getBlock();
+          //logger.debug("Current Block Height: " + lastBlockChecked.getY());
+
+          float[] blockBeamColorMultipliers = new float[] {0.0f};
+          //urrentBlockState.getBeaconColorMultiplier(world, lastBlockChecked, getPos());
+
+          //logger.debug("color multipliers: " + Arrays.toString(blockBeamColorMultipliers));
+
+          if(blockBeamColorMultipliers!= null) {
+
+            newBeamSegment = new BeamSegment(blockBeamColorMultipliers,lastBlockChecked.getY());
+            newBeamSegments.add(newBeamSegment);
+
+          }/*else {
+
+								if(newBeamSegment == null || currentBlockState.getOpacity(this.world, lastBlockChecked) >= 15
+										&& currentBlock != Blocks.BEDROCK) {
+									this.newBeamSegments.clear();
+									break;
+								}
+
+							}
+							*/
+          lastBlockChecked = lastBlockChecked.up();
+        }
+
+        oldBeamSegments = newBeamSegments;
+
+        ticksSinceLastBeamCheck = 0;
+      }
+    }
+
+  }
+
 	@OnlyIn(Dist.CLIENT)
 	public double getMaxRenderDistanceSquared() {
 		return 65536.0D;
